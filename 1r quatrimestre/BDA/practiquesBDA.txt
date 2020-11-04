@@ -1,0 +1,160 @@
+PRACTIQUES BDA
+
+SESSIO 1
+
+select distinct cod_pais from actor order by cod_pais asc;
+select distinct cod_peli, titulo from pelicula where anyo < 1970 and cod_lib is null order by titulo;
+select distinct cod_act, nombre from actor where nombre like '%John%';
+select distinct cod_peli, titulo from pelicula where duracion > 120 and anyo > 1979 and anyo < 1990;
+select distinct cod_peli, titulo from pelicula where cod_lib is not null and director like '%Pakula%';
+select count(*) from pelicula where anyo > 1979 and anyo < 1990 and duracion > 120; 
+select count (distinct cod_peli) CUÁNTAS_PELIS from clasificacion where cod_gen = 'BB5' or cod_gen = 'GG4' or cod_gen = 'JH6';
+select MIN (anyo) from libro_peli;
+select AVG(duracion) from pelicula where anyo = '1987';
+select sum(duracion) DURAN_MIN from pelicula where director = 'Steven Spielberg';
+
+SESSIO 2
+
+SELECT DISTINCT A.cod_peli , A.titulo FROM pelicula A, actor B, actua C WHERE B.cod_act = C.cod_act AND A.cod_peli = C.cod_peli AND B.nombre = A.director order by a.titulo asc;
+SELECT A.cod_peli, A.titulo FROM pelicula A, clasificacion B, genero C WHERE C.nombre = 'Comedia' AND C.cod_gen = B.cod_gen AND B.cod_peli = A.cod_peli order by A.titulo asc;
+SELECT A.cod_peli, A.titulo FROM pelicula A, libro_peli B WHERE A.cod_lib = B.cod_lib AND B.anyo < 1950 order by A.titulo asc;
+SELECT DISTINCT P.cod_pais, P.nombre FROM pais P, actor A, genero G, pelicula P, clasificacion C, actua AC WHERE P.cod_pais = A.cod_pais AND A.cod_act = AC.cod_act AND 
+    AC.cod_peli = P.cod_peli AND P.cod_peli = C.cod_peli AND C.cod_gen = G.cod_gen AND G.nombre = 'Comedia' order by P.nombre asc;
+    
+    
+    
+SELECT cod_peli , titulo FROM pelicula P WHERE cod_peli IN
+    (SELECT cod_peli FROM actua WHERE cod_act IN
+        (SELECT cod_act FROM actor A WHERE P.director = A.nombre)
+    ) order by P.titulo asc;
+    
+    
+    
+    
+SELECT cod_act , nombre FROM actor WHERE cod_act IN 
+    (SELECT cod_act FROM actua WHERE papel = 'Principal') AND EXTRACT (YEAR FROM fecha_nac) < 1950
+    ORDER BY nombre asc;
+
+
+
+SESSIÓ 3
+
+
+SELECT cod_lib, titulo, autor FROM libro_peli WHERE cod_lib IN
+    (SELECT cod_lib FROM pelicula WHERE anyo BETWEEN 1990 AND 1999) ORDER BY titulo;
+    
+
+SELECT cod_lib, titulo, autor FROM libro_peli WHERE cod_lib NOT IN 
+    (SELECT cod_lib FROM pelicula WHERE cod_lib IS NOT null) ORDER BY titulo;
+    
+    
+SELECT nombre FROM genero WHERE cod_gen IN
+    (SELECT cod_gen FROM clasificacion WHERE cod_peli IN
+        (SELECT cod_peli FROM pelicula WHERE cod_peli NOT IN
+            (SELECT cod_peli FROM actua WHERE cod_act IS NOT null)
+        )    
+    )ORDER BY nombre; 
+    
+    
+SELECT titulo FROM libro_peli WHERE cod_lib IN 
+    (SELECT cod_lib FROM pelicula WHERE cod_peli NOT IN
+        (SELECT cod_peli FROM actua WHERE cod_act NOT IN
+            (SELECT cod_act FROM actor WHERE cod_pais IN
+                (SELECT cod_pais FROM pais WHERE nombre <> 'USA')
+            )
+        )
+    ) ORDER BY titulo;   
+    
+SELECT COUNT(cod_peli) FROM pelicula p WHERE cod_peli IN
+    (SELECT cod_peli FROM clasificacion WHERE cod_gen IN
+        (SELECT cod_gen FROM genero WHERE nombre = 'Comedia')
+    ) AND (SELECT COUNT(*) FROM actua a WHERE a.cod_peli = p.cod_peli AND a.papel = 'Secundario') = 1;  
+    
+    
+SELECT MIN (anyo) FROM pelicula WHERE cod_peli IN
+    (SELECT cod_peli FROM actua a WHERE cod_act IN
+        (SELECT cod_act FROM actor WHERE nombre = 'Jude Law' AND a.papel = 'Principal')
+    );   
+    
+    
+SELECT cod_act, nombre FROM actor WHERE fecha_nac IN
+    (SELECT MIN (fecha_nac) FROM actor);
+    
+    
+SELECT cod_act, nombre, fecha_nac FROM actor WHERE fecha_nac IN
+    (SELECT MIN (fecha_nac) FROM actor WHERE EXTRACT (YEAR FROM fecha_nac) = 1940);
+    
+    
+SELECT nombre FROM genero WHERE cod_gen IN 
+    (SELECT cod_gen FROM clasificacion WHERE cod_peli IN 
+        (SELECT cod_peli FROM pelicula WHERE duracion IN
+            (SELECT MAX (duracion) FROM pelicula)
+        )
+    ) ORDER BY nombre;  
+    
+    
+SELECT cod_lib, titulo FROM libro_peli WHERE cod_lib IN 
+    (SELECT cod_lib FROM pelicula WHERE cod_peli IN 
+        (SELECT cod_peli FROM actua WHERE cod_act IN 
+            (SELECT cod_act FROM actor WHERE cod_pais IN
+                (SELECT cod_pais FROM pais WHERE nombre = 'España')
+            )
+        )
+    ) ORDER BY titulo;    
+    
+    /*eSTE NO VA DEL TOT*/
+SELECT titulo FROM pelicula WHERE anyo < 1950 AND cod_peli IN
+    (SELECT cod_peli FROM clasificacion WHERE cod_gen IN
+        (SELECT cod_gen FROM clasificacion WHERE /*es un WHERE, no un IN*/ 
+            (SELECT COUNT (cod_gen) FROM clasificacion) > 1
+        )    
+    ) ORDER BY titulo;
+
+
+SESSIÓ 4
+
+//27
+SELECT titulo FROM pelicula p WHERE p.anyo < 1950 AND 
+    (SELECT COUNT(*) FROM clasificacion x WHERE x.cod_peli = p.cod_peli) > 1
+     ORDER BY titulo;
+    
+    
+//28
+SELECT COUNT(*) FROM pelicula p WHERE 
+    (SELECT COUNT(*) FROM actua act WHERE act.cod_peli = p.cod_peli) < 4;   
+
+
+
+//32
+SELECT cod_pais, nombre FROM pais p WHERE NOT EXISTS
+    (SELECT * FROM actor a WHERE p.cod_pais = a.cod_pais
+    AND NOT EXTRACT(YEAR FROM fecha_nac) BETWEEN 1900 and 1999) order by nombre;
+
+
+//33
+SELECT cod_act, nombre FROM actor a WHERE NOT EXISTS
+    (SELECT * FROM actua ac WHERE a.cod_act = ac.cod_act AND NOT papel = 'Secundario')
+    AND EXISTS
+        (SELECT * FROM actua ac WHERE a.cod_act = ac.cod_act) ORDER BY nombre;
+        
+        
+//34
+SELECT cod_act, nombre FROM actor a WHERE EXISTS
+    (SELECT * FROM actua ac WHERE a.cod_act = ac.cod_act AND NOT EXISTS
+        (SELECT * FROM pelicula p WHERE ac.cod_peli = p.cod_peli AND NOT director = 'Guy Ritchie')
+    ) ORDER BY cod_act;
+    
+//35
+SELECT cod_act, nombre FROM actor a WHERE EXISTS
+    (SELECT * FROM actua ac WHERE a.cod_act = ac.cod_act AND NOT EXISTS
+        (SELECT * FROM pelicula p WHERE ac.cod_peli = p.cod_peli AND NOT director = 'John Steel')
+    ) ORDER BY cod_act;
+    
+
+//36
+SELECT cod_peli, titulo FROM pelicula p WHERE p.duracion < 100  AND EXISTS 
+    (SELECT * FROM pais pa WHERE NOT EXISTS 
+        (SELECT * FROM actor a, actua x WHERE p.cod_peli = x.cod_peli AND 
+        x.cod_act = a.cod_act AND a.cod_pais <> pa.cod_pais)) AND p.cod_peli IN 
+            (SELECT y.cod_peli FROM actua y) ORDER BY cod_peli;
+
